@@ -90,22 +90,22 @@ else return responsEntity where status and body is set
 
 Here this wont be handled by exception handler exception resolver but it will be handled by response status exception handler
 
-![img.png](img.png)
+![img.png](Images/Ehand1.png)
 
-![img_1.png](img_1.png)
-
-
-![img_2.png](img_2.png)
+![img_1.png](Images/Ehand2.png)
 
 
-![img_3.png](img_3.png)
+![img_2.png](Images/Ehand3.png)
 
-![img_4.png](img_4.png)
+
+![img_3.png](Images/Ehand4.png)
+
+![img_4.png](Images/Ehand5.png)
 
 
 3. Default Handler Exception Resolver
 
-![img_5.png](img_5.png)
+![img_5.png](Images/Ehand6.png)
 
 The DefaultHandlerExceptionResolver is a built-in Spring MVC component that implements the HandlerExceptionResolver interface. Its main job is to handle standard Spring MVC exceptions that occur during request processing, like:
 
