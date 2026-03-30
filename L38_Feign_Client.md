@@ -106,3 +106,350 @@ RestTemplate requires:
 
 ----------------------------------------------------------------------------------------
 
+![img.png](Images/FC1.png)
+
+![img_1.png](Images/FC2.png)
+
+![img_2.png](Images/FC3.png)
+
+![img_3.png](Images/FC4.png)
+
+![img_4.png](Images/FC5.png)
+
+![img_5.png](Images/FC6.png)
+
+![img_6.png](Images/FC7.png)
+
+![img_7.png](Images/FC8.png)
+
+![img_8.png](Images/FC9.png)
+
+![img_9.png](Images/FC10.png)
+
+![img.png](Images/FC11.png)
+
+![img_1.png](Images/FC12.png)
+
+![img_2.png](Images/FC13.png)
+
+![img_3.png](Images/FC14.png)
+
+![img_4.png](Images/FC15.png)
+
+![img_5.png](Images/FC16.png)
+
+![img_6.png](Images/FC17.png)
+
+![img_7.png](Images/FC18.png)
+
+![img_8.png](Images/FC19.png)
+
+![img_9.png](Images/FC20.png)
+
+![img_10.png](Images/FC21.png)
+
+![img_11.png](Images/FC22.png)
+
+![img_12.png](Images/FC23.png)
+
+
+
+
+# **1️⃣ FeignClientsRegistrar gets triggered**
+
+When Spring sees:
+
+`@EnableFeignClients`
+
+➡️ It loads **FeignClientsRegistrar**.
+
+This registrar:
+
+- scans your classpath
+
+- finds all interfaces annotated with `@FeignClient`
+
+- registers one **FeignClientFactoryBean** per Feign interface
+
+
+✔ At this stage, **NO proxy created yet**.  
+✔ Only Spring bean definitions.
+
+---
+
+# **2️⃣ For each @FeignClient interface**
+
+FeignClientFactoryBean creates:
+
+## **✔ One `Feign.Builder`**
+
+Contains:
+
+- Encoder
+
+- Decoder
+
+- Contract (annotation parser)
+
+- Retryer
+
+- ErrorDecoder
+
+- Logger
+
+- Client (OkHttp, HttpClient)
+
+
+---
+
+# **3️⃣ Feign parses methods → creates MethodHandlers**
+
+Correcting your point:
+
+👉 Feign **does NOT create a MethodHandler for each method directly**.
+
+❗ It first creates a **RequestTemplate** for each method:
+
+- URL template
+
+- HTTP method
+
+- headers
+
+- path variables
+
+- query params
+
+- body template
+
+
+Then Feign creates one **SynchronousMethodHandler** per method.
+
+Each MethodHandler contains:
+
+- the RequestTemplate
+
+- Encoder
+
+- Decoder
+
+- Retryer
+
+- LoadBalancer or base URL
+
+- Exception handling logic
+
+
+➡️ All MethodHandlers are stored in a `Map<Method, MethodHandler>` called **dispatch**.
+
+✔ **This part you understood correctly.**
+
+---
+
+# **4️⃣ InvocationHandler created**
+
+Feign builds a **FeignInvocationHandler**.
+
+This is the “brain”.
+
+It contains:
+
+- the `Map<Method, MethodHandler>`
+
+- logic to select the correct handler
+
+
+✔ **It does NOT contain encoder/decoder**  
+These are inside each MethodHandler.
+
+---
+
+# **5️⃣ JDK Dynamic Proxy is created**
+
+Finally:
+
+`Proxy.newProxyInstance(...)`
+
+Creates a proxy implementing your Feign interface.
+
+✔ This object is the actual bean injected into your Services.
+
+---
+
+# **6️⃣ Runtime: When you call a method**
+
+Your understanding is correct, but let me refine it:
+
+### **Step-by-step:**
+
+`userClient.getUser(10)`
+
+1️⃣ Proxy intercepts the call  
+2️⃣ Proxy calls InvocationHandler.invoke()  
+3️⃣ InvocationHandler finds the matching MethodHandler from dispatch map  
+4️⃣ MethodHandler builds the HTTP request  
+5️⃣ Sends request using the HTTP client (OkHttp, Apache)  
+6️⃣ Decoder converts response to the return type  
+7️⃣ Result returned to your service
+
+✔ This part is **100% correct in your explanation**.
+
+---
+
+# ✅ **Your Version (Corrected & polished)**
+
+Here is the final, interview-ready, accurate version:
+
+---
+
+### **When Spring sees @EnableFeignClients:**
+
+### **1. FeignClientsRegistrar runs**
+
+- Scans all interfaces with `@FeignClient`.
+
+- Registers a `FeignClientFactoryBean` for each.
+
+
+### **2. Feign builds for each interface:**
+
+- A Feign Builder
+
+- Parses each method
+
+- Creates a `RequestTemplate`
+
+- Creates one `MethodHandler` per method
+
+- Stores them in a **dispatch map**
+
+
+### **3. Feign creates an InvocationHandler**
+
+- Bridges method calls from proxy → method handlers
+
+
+### **4. JDK Dynamic Proxy created**
+
+- Implements your Feign interface
+
+- Uses InvocationHandler to handle all calls
+
+
+### **5. At runtime:**
+
+- Proxy intercepts call
+
+- Invokes InvocationHandler
+
+- Which finds the correct MethodHandler
+
+- Which builds & sends the HTTP request
+
+- Decodes response
+
+- Returns result
+
+
+---
+
+# 1️⃣ What is “boilerplate” in RestTemplate?
+
+**Boilerplate = repeated, mechanical code you must write every time**, even though the _intent_ is the same.
+
+### Example: calling `order-service` using **RestTemplate**
+
+```
+@Service
+public class OrderService {
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    public Order getOrder(Long id) {
+
+        String url = "http://order-service/orders/" + id;
+
+        ResponseEntity<Order> response =
+            restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                Order.class
+            );
+
+        return response.getBody();
+    }
+}
+
+```
+
+### 🔴 What’s boilerplate here?
+
+Every REST call repeats:
+
+1. Construct URL
+
+2. Choose HTTP method
+
+3. Handle `ResponseEntity`
+
+4. Specify response type
+
+5. Handle exceptions manually
+
+6. Add headers manually (auth, trace-id)
+
+7. Integrate load balancing manually
+
+
+You repeat this **for every endpoint, every service**.
+
+---
+
+# 2️⃣ Same call using Feign Client
+
+```
+@FeignClient(name = "order-service")
+public interface OrderClient {
+
+    @GetMapping("/orders/{id}")
+    Order getOrder(@PathVariable Long id);
+}
+
+```
+And call it like:
+
+`Order order = orderClient.getOrder(id);`
+
+---
+
+# 3️⃣ So WHAT exactly got removed?
+
+|Concern|RestTemplate|Feign|
+|---|---|---|
+|URL building|Manual|Automatic|
+|HTTP method|Manual|Annotation|
+|Serialization|Manual|Automatic|
+|ResponseEntity|Manual|Hidden|
+|Load Balancing|Manual|Automatic|
+|Error handling|Manual|Centralized|
+|Headers|Manual|Interceptor|
+|Retry|Manual|Built-in|
+
+👉 **You only write business intent**, not HTTP mechanics.
+
+Interceptor Example:
+
+    RestClient client = RestClient.builder()
+    .requestInterceptor((req, body, exec) -> {
+    System.out.println("Interceptor 1");
+    return exec.execute(req, body);
+    })
+    .requestInterceptor((req, body, exec) -> {
+    System.out.println("Interceptor 2");
+    return exec.execute(req, body);
+    })
+    .build();
+
+
