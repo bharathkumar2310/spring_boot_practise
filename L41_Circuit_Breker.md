@@ -381,3 +381,40 @@ Wrong config
 ![img_3.png](Images/CB16.png)
 
 ![img_4.png](Images/CB17.png)
+
+
+
+In Spring, circuit breakers (like Resilience4j) are applied using proxies (AOP).
+
+👉 Proxies can only intercept:
+
+public methods (mainly)
+calls coming from outside the bean
+🔹 1. Private method case ❌
+@CircuitBreaker(name = "service")
+private String callService() {
+return restTemplate.getForObject(...);
+}
+
+👉 This will NOT work
+
+Why?
+
+Private methods are not visible to proxy
+Proxy cannot intercept them
+🔹 2. Even worse: Internal calls (VERY IMPORTANT) 🔥
+public String process() {
+return callService(); // ❌ internal call
+}
+
+@CircuitBreaker(name = "service")
+public String callService() {
+return restTemplate.getForObject(...);
+}
+
+👉 Circuit breaker still WON’T work
+
+Why?
+
+Call is inside same class
+Proxy is bypassed
