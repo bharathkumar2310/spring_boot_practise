@@ -1,6 +1,15 @@
 
-\
+Service Discovery :
 
+
+What is Service Discovery?
+
+        In microservices, each service runs independently and may scale up/down or move across machines. So their IP address and port keep changing.
+        
+        👉 Service Discovery solves this by introducing a registry where:
+        
+        Services register themselves
+        Other services discover them dynamically
 ![img.png](Images/SD1.png)
 
 ![img_1.png](Images/sd2.png)
@@ -343,3 +352,44 @@ Multiple Eureka servers:
 2. Replicates registry to peers
 
 3. Eventually consistent
+
+
+
+🎯 Short Answer
+
+👉 Yes, other services eventually know about changes in Netflix Eureka — but NOT instantly.
+
+It works on an eventual consistency model.
+
+🧠 What Happens When a Service Changes?
+
+Let’s say:
+
+Service A changes IP / goes down / new instance added
+Step-by-step:
+Service registers/updates in Eureka
+Eureka updates its registry
+Other services (clients) do NOT query Eureka every time
+Instead, they:
+Maintain a local cache
+Periodically refresh it (default ~30 seconds)
+
+
+
+3. Self-Preservation Mode (Important)
+   If many services stop sending heartbeats:
+   Eureka assumes network issue
+   DOES NOT remove instances immediately
+
+👉 Prevents mass failure but increases staleness
+
+
+🎯 Correct Behavior
+
+When self-preservation mode is ON:
+
+👉 Eureka will:
+
+❌ NOT remove instances
+❌ NOT mark them as DOWN
+✅ Keep them as UP (even if they might be dead)
