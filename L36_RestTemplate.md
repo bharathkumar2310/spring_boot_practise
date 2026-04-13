@@ -450,6 +450,72 @@ Post post = restTemplate.getForObject(uri, Post.class);
 ✅ Clean, type-safe, and readable.
 
 
+🧠 Why Encoding Is Needed
+
+URLs cannot contain certain characters directly:
+
+Character	Problem
+space " "	Invalid
+&	Confuses query params
+=	Breaks key-value pairs
+?	Breaks URL structure
+🔥 Example Problem
+String name = "John Doe";
+String url = "http://example.com/users?name=" + name;
+
+👉 Result:
+
+http://example.com/users?name=John Doe ❌
+✅ Using UriComponentsBuilder
+String url = UriComponentsBuilder
+.fromUriString("http://example.com/users")
+.queryParam("name", "John Doe")
+.build()
+.encode()
+.toUriString();
+
+👉 Result:
+
+http://example.com/users?name=John%20Doe ✅
+🔄 How Encoding Helps
+1. Prevents Invalid URLs
+   Converts unsafe characters → safe format
+2. Prevents Bugs in Query Params
+
+Example:
+
+queryParam("filter", "a=b&c=d")
+
+Without encoding:
+
+?filter=a=b&c=d ❌ (broken)
+
+With encoding:
+
+?filter=a%3Db%26c%3Dd ✅
+3. Prevents Security Issues
+
+👉 Helps avoid:
+
+Injection attacks
+Malformed requests
+4. Handles Path Variables Safely
+   .path("/users/{name}")
+   .buildAndExpand("John Doe")
+   .encode()
+
+👉 Converts:
+
+/users/John%20Doe
+⚠️ Important Detail
+
+👉 Encoding is NOT always automatic
+
+.build() → ❌ no encoding
+.build().encode() → ✅ encoding
+.build(true) → ✅ encoding (shortcut)
+
+
 
 --------------------------------------------------------------------------------------------
 
@@ -1051,13 +1117,13 @@ There are **four overloads**:
 
 ## 🧠 Parameters Explained
 
-|Parameter|Description|
-|---|---|
-|`url`|Endpoint of the API|
-|`method`|HTTP method (`GET`, `POST`, etc.)|
-|`requestEntity`|Includes request body and headers (wrapped inside `HttpEntity`)|
-|`responseType`|Expected response class (e.g., `User.class`)|
-|`uriVariables`|Optional path variables|
+| Parameter       | Description                                                     |
+|-----------------|-----------------------------------------------------------------|
+| `url`           | Endpoint of the API                                             |
+| `method`        | HTTP method (`GET`, `POST`, etc.)                               |
+| `requestEntity` | Includes request body and headers (wrapped inside `HttpEntity`) |
+| `responseType`  | Expected response class (e.g., `User.class`)                    |
+| `uriVariables`  | Optional path variables                                         |
 
 ---
 
@@ -1183,23 +1249,23 @@ ResponseEntity<User> response = restTemplate.exchange(request, User.class);
 
 Always returns a `ResponseEntity<T>`, which gives you:
 
-|Method|Description|
-|---|---|
-|`getBody()`|Response body|
-|`getStatusCode()`|HTTP status|
-|`getHeaders()`|Response headers|
-|`getStatusCodeValue()`|Status code (as int)|
+| Method                 | Description          |
+|------------------------|----------------------|
+| `getBody()`            | Response body        |
+| `getStatusCode()`      | HTTP status          |
+| `getHeaders()`         | Response headers     |
+| `getStatusCodeValue()` | Status code (as int) |
 
 ---
 
 ## 🧩 Common Use Cases
 
-|Operation|Use exchange with|Why|
-|---|---|---|
-|Authenticated requests|JWT / Basic Auth|To send headers|
-|Handling full responses|Need status or headers|Unlike `getForObject()`|
-|Non-GET methods|PATCH, DELETE with headers|Other shortcuts don’t support headers|
-|Error handling|Access 4xx / 5xx|To inspect status codes|
+| Operation               | Use exchange with          | Why                                   |
+|-------------------------|----------------------------|---------------------------------------|
+| Authenticated requests  | JWT / Basic Auth           | To send headers                       |
+| Handling full responses | Need status or headers     | Unlike `getForObject()`               |
+| Non-GET methods         | PATCH, DELETE with headers | Other shortcuts don’t support headers |
+| Error handling          | Access 4xx / 5xx           | To inspect status codes               |
 
 
 
@@ -1545,11 +1611,11 @@ public ResponseEntity<User> getUser(@PathVariable int id) {
 
 ## 🧩 🔁 Relationship between them
 
-|Class|Extends|Used For|Contains|
-|---|---|---|---|
-|**HttpEntity<T>**|—|Request or response (basic)|Headers + Body|
-|**RequestEntity<T>**|HttpEntity|Request only|Headers + Body + Method + URL|
-|**ResponseEntity<T>**|HttpEntity|Response only|Headers + Body + Status Code|
+| Class                 | Extends    | Used For                    | Contains                      |
+|-----------------------|------------|-----------------------------|-------------------------------|
+| **HttpEntity<T>**     | —          | Request or response (basic) | Headers + Body                |
+| **RequestEntity<T>**  | HttpEntity | Request only                | Headers + Body + Method + URL |
+| **ResponseEntity<T>** | HttpEntity | Response only               | Headers + Body + Status Code  |
 
 
 
@@ -1588,10 +1654,10 @@ Without `User.class`, it wouldn’t know what type to deserialize into.
 
 ## 🧩 2️⃣ Serialization vs Deserialization
 
-|Direction|Happens when|Example|Type Used|
-|---|---|---|---|
-|**Serialization**|Sending data (Java → JSON)|In `postForObject`, `put`, etc.|Uses request body object|
-|**Deserialization**|Receiving data (JSON → Java)|In `getForObject`, `exchange`|Uses `Class<T>` or `ParameterizedTypeReference<T>`|
+| Direction           | Happens when                 | Example                         | Type Used                                          |
+|---------------------|------------------------------|---------------------------------|----------------------------------------------------|
+| **Serialization**   | Sending data (Java → JSON)   | In `postForObject`, `put`, etc. | Uses request body object                           |
+| **Deserialization** | Receiving data (JSON → Java) | In `getForObject`, `exchange`   | Uses `Class<T>` or `ParameterizedTypeReference<T>` |
 
 ### Example:
 
@@ -1712,3 +1778,59 @@ That’s why this won’t deserialize properly:
 `restTemplate.exchange(url, HttpMethod.GET, null, List.class);`
 
 ➡️ It becomes a raw `List<LinkedHashMap>` because `User` type info is gone.
+
+
+
+🟢 execute() — Low-Level API
+
+More common in RestTemplate:
+
+restTemplate.execute(
+url,
+HttpMethod.GET,
+requestCallback,
+responseExtractor
+);
+
+
+
+
+What it does
+
+👉 Gives you:
+
+Direct access to request creation
+Direct access to response stream
+
+You control:
+
+How request is built
+How response is parsed
+
+
+Why This Works?
+
+When you create an anonymous class:
+
+👉 Java stores generic type in:
+
+getGenericSuperclass()
+
+So Spring can extract:
+
+List<User>
+🔄 Internal Flow (Simplified)
+
+You write:
+
+new ParameterizedTypeReference<List<User>>() {}
+
+Spring reads:
+
+this.getClass().getGenericSuperclass()
+
+Extracts:
+
+List<User>
+Uses it for:
+JSON deserialization

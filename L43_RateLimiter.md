@@ -2,15 +2,71 @@
 
 A **rate limiter** ensures that a client (user, IP, service, or application) is allowed to make **only a certain number of requests per second/minute/hour**.
 
+
+
+| Pattern         | Protects     | From                         |
+| --------------- | ------------ | ---------------------------- |
+| Bulkhead        | Your service | Internal resource exhaustion |
+| Circuit Breaker | Your service | Slow/failing downstream      |
+| Rate Limiter    | Your service | Too many incoming requests   |
+
+    RateLimiter → controls entry
+    Bulkhead → isolates resources
+    CircuitBreaker → avoids bad calls
 Example:
 
-|Limit|Meaning|
-|---|---|
-|100 requests / minute|max 100 requests from a client in 60 seconds|
-|10 requests / second|max 10 requests in one second|
+| Limit                 | Meaning                                      |
+|-----------------------|----------------------------------------------|
+| 100 requests / minute | max 100 requests from a client in 60 seconds |
+| 10 requests / second  | max 10 requests in one second                |
 
 If the client exceeds the limit → requests get **blocked, delayed, or retried**.
 
+
+👉 A rate limiter can be:
+    
+    ✅ Per client (most common)
+    ✅ Global (all users combined)
+    ✅ Per API / per user / per IP / per token
+🧠 Two Main Types
+🔵 1. Global Rate Limiting
+Limit: 100 requests/minute (TOTAL)
+
+👉 All users share this limit
+
+Example:
+User A → 60 requests
+User B → 40 requests
+User C → ❌ blocked
+🟢 2. Per-Client Rate Limiting (More Common)
+Limit: 10 requests/minute per user
+
+👉 Each client gets its own quota
+
+Example:
+User A → 10 allowed
+User B → 10 allowed
+User C → 10 allowed
+🔥 Real-World Usage
+
+Most systems use:
+
+👉 Per-client limits based on:
+
+User ID
+API key
+IP address
+JWT token
+🧠 In Resilience4j
+
+👉 By default:
+
+RateLimiter is per instance
+RateLimiter rateLimiter = RateLimiter.of("service");
+
+👉 This means:
+
+Same limit for all calls using that instance
 ---
 
 # ✅ **Why is a Rate Limiter Needed?**

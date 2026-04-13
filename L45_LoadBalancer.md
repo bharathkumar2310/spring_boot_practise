@@ -599,3 +599,9 @@ Controller
  → HTTP Client
 
 ```
+
+
+Rest Template themselves provide interceptors 
+
+
+The interceptor calls LoadBalancerClient, which fetches instances from the DiscoveryClient (usually from a local cache), and uses a strategy like round-robin to pick one.
