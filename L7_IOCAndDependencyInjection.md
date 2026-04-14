@@ -373,3 +373,97 @@ the soln is below
       such as property files (application.properties or application.yml), environment variables, system properties, or even literal strings, into Spring-managed beans. 
 
 ![img_1.png](Images/value.png)
+
+
+@Primary
+
+Used in Spring Framework
+
+🧠 Purpose:
+
+👉 Tells Spring:
+
+“If multiple beans exist, choose THIS one by default”
+
+✅ Example
+interface PaymentService {}
+
+@Component
+@Primary
+class CreditCardPayment implements PaymentService {}
+
+@Component
+class UpiPayment implements PaymentService {}
+
+Injection:
+
+@Autowired
+private PaymentService paymentService;
+
+👉 Which gets injected?
+
+✔ CreditCardPayment (because of @Primary)
+
+🎯 When to use:
+One default bean
+Others are optional
+🚀 2. @Qualifier
+🧠 Purpose:
+
+👉 Tells Spring:
+
+“Inject EXACTLY this bean”
+
+✅ Example
+@Component("credit")
+class CreditCardPayment implements PaymentService {}
+
+@Component("upi")
+class UpiPayment implements PaymentService {}
+
+Injection:
+
+@Autowired
+@Qualifier("upi")
+private PaymentService paymentService;
+
+👉 Result:
+
+✔ UpiPayment injected
+
+⚠️ Important:
+Overrides @Primary
+More specific
+🧠 Rule (VERY IMPORTANT)
+
+👉 Priority:
+
+@Qualifier > @Primary > Default
+🚀 3. @Value
+🧠 Purpose:
+
+👉 Injects values (not beans)
+
+✅ Example
+application.properties
+app.name=MyApp
+Java
+@Value("${app.name}")
+private String appName;
+
+👉 Injects:
+
+✔ "MyApp"
+
+🧪 Also supports default value
+@Value("${app.port:8080}")
+private int port;
+
+👉 If not found → uses 8080
+
+⚠️ Can inject:
+Properties
+Environment variables
+Hardcoded values
+@Value("Hello")
+private String msg;
