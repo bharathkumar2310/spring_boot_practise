@@ -51,6 +51,15 @@
 
 ---------------------------------------------------------------------------------
 
+Client Request
+↓
+DelegatingFilterProxy (from Spring Boot)
+↓
+FilterChainProxy  ⭐ (Spring Security core)
+↓
+SecurityFilterChain (list of filters)
+↓
+Controller
 
 ### SecurityFilterChain
 

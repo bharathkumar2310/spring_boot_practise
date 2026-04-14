@@ -1,7 +1,7 @@
 ## 🔐 What is JWT?
 
 **JWT (JSON Web Token)** is a **compact, digitally signed token** used to **securely transmit information** (like user identity or permissions) between two parties — usually a **client (browser/app)** and a **server (backend API)**.
-
+JWT (JSON Web Token) is mainly used for authentication and authorization in modern applications.
 It’s basically a **string** with three parts separated by dots:
 
 `xxxxx.yyyyy.zzzzz`
@@ -292,6 +292,146 @@ Uses **a private key** to sign and a **public key** to verify.
 2. **More complex key management** — need to handle key pairs (private + public), rotation, etc.
 
 3. **Slightly larger token size** — asymmetric signatures are longer than HMAC ones.
+
+
+
+
+🔥 1. Why do we HASH?
+
+👉 Hashing is used for data integrity
+
+Converts data → fixed-size value
+Even a tiny change → completely different hash
+
+Example:
+
+data → hash(data)
+
+👉 Purpose:
+
+Detect tampering
+🔥 2. Why do we SIGN?
+
+👉 Signing is used for authentication + integrity
+
+How it works:
+
+hash(data) → encrypt with private key → signature
+
+Receiver:
+
+decrypt signature using public key → compare hash
+
+👉 Ensures:
+
+Data is not modified ✅
+Sender is genuine ✅
+🔥 3. Why do we ENCODE (Base64)?
+
+👉 Encoding is used for safe transmission
+
+JWT uses Base64 encoding because:
+
+HTTP headers only support text
+Binary data may break transmission
+
+Example:
+
+binary → Base64 → safe string
+
+👉 Important:
+
+❌ Encoding is NOT security
+✅ It’s just formatting
+
+
+🔐 How digital signature actually works
+
+Instead of doing this ❌:
+
+encrypt(data with private key)
+
+We do this ✅:
+
+hash(data) → encrypt(hash with private key)
+🔥 Why not sign raw data directly?
+❌ 1. Performance problem
+Data can be very large (MBs, GBs)
+Asymmetric encryption is slow
+
+👉 Hash is:
+
+Fixed size (e.g., 256 bits)
+Very fast
+❌ 2. Inefficient & unnecessary
+Encrypting full data = heavy computation
+Hash gives same integrity guarantee
+❌ 3. Standard cryptographic design
+
+All modern systems (JWT, TLS, certificates) follow:
+
+👉 “Hash first, then sign”
+
+🔍 So where does integrity come from?
+
+👉 From comparing hashes:
+
+Sender:
+hash(data) → sign → signature
+Receiver:
+decrypt(signature) → original hash
+compute hash(data again)
+
+compare both hashes
+
+👉 If same → data not changed ✅
+
+
+
+🔥 1. Common Hashing Algorithms
+
+Used to generate a fixed-size digest:
+
+SHA-256 (most common, used in JWT, TLS)
+SHA-384
+SHA-512
+
+👉 Example:
+
+hash = SHA-256(data)
+🔥 2. Common Signing Algorithms
+
+These use hashing + cryptography internally.
+
+✅ HMAC (Symmetric)
+HMAC-SHA256 (HS256)
+HMAC-SHA512 (HS512)
+
+👉 Uses:
+
+Same secret key for sign & verify
+✅ RSA (Asymmetric)
+RS256 (RSA + SHA-256)
+RS512
+
+👉 Uses:
+
+Private key → sign
+Public key → verify
+✅ ECDSA (Elliptic Curve)
+ES256
+ES384
+
+👉 More secure with smaller keys
+
+
+Header contains algorithm info 👇
+{
+"alg": "HS256",
+"typ": "JWT"
+}
+
+Use HMAC-SHA256
 
 
 ------------------------------------------------------------------------------------------
