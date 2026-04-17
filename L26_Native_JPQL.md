@@ -146,3 +146,20 @@ for Native queries:
 4. StringBasedJpaQuery created
 5. EntityManager.createNativeQuery(...) called
 6. SQL executed
+
+What is a Named Query?
+
+In Spring Data JPA / JPA:
+
+@NamedQuery(
+name = "User.updateName",
+query = "UPDATE User u SET u.name = :name WHERE u.id = :id"
+)
+
+👉 It’s just:
+
+A predefined JPQL query
+Stored at startup
+Reused later
+
+

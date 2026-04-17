@@ -514,15 +514,23 @@ And call it like:
 
 # 3️⃣ So WHAT exactly got removed?
 
-|Concern|RestTemplate|Feign|
-|---|---|---|
-|URL building|Manual|Automatic|
-|HTTP method|Manual|Annotation|
-|Serialization|Manual|Automatic|
-|ResponseEntity|Manual|Hidden|
-|Load Balancing|Manual|Automatic|
-|Error handling|Manual|Centralized|
-|Headers|Manual|Interceptor|
-|Retry|Manual|Built-in|
+| Concern        | RestTemplate | Feign       |
+|----------------|--------------|-------------|
+| URL building   | Manual       | Automatic   |
+| HTTP method    | Manual       | Annotation  |
+| Serialization  | Manual       | Automatic   |
+| ResponseEntity | Manual       | Hidden      |
+| Load Balancing | Manual       | Automatic   |
+| Error handling | Manual       | Centralized |
+| Headers        | Manual       | Interceptor |
+| Retry          | Manual       | Built-in    |
 
 👉 **You only write business intent**, not HTTP mechanics.
+
+
+
+-------
+authorize 
+oauth2
+aop 
+transactional

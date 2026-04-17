@@ -691,3 +691,83 @@ Options:
 - Spring Cloud Bus
 
 - Restart app
+
+
+
+@RefreshScope is a different concept from AOP—but interestingly, it also uses proxies, which is why it often gets confused with @Aspect.
+
+Let’s break it cleanly.
+
+🔹 What is @RefreshScope?
+
+@RefreshScope is from Spring Cloud, and it allows a bean to be reloaded at runtime when configuration changes—without restarting the app.
+
+🔹 Why do we need it?
+
+Normally:
+
+@Value("${db.url}")
+private String url;
+
+👉 Value is fixed at startup
+👉 If config changes → no effect
+
+With @RefreshScope:
+
+@RefreshScope
+@Component
+public class MyService {
+
+    @Value("${db.url}")
+    private String url;
+}
+
+👉 When config changes → bean gets recreated with new values
+
+🔹 How does it work internally?
+
+Yes—again, proxy is involved 👇
+
+✔ What Spring does:
+Creates a proxy instead of the real bean
+Proxy holds reference via a BeanFactory
+On method call:
+Proxy fetches the current bean instance
+When refresh is triggered:
+Old bean is destroyed
+New bean is created with updated config
+🔹 Flow
+Client → Proxy → (fetch latest bean) → Actual Bean
+🔹 How refresh is triggered?
+
+Usually via actuator:
+
+POST /actuator/refresh
+
+👉 This tells Spring:
+
+Re-read config
+Recreate @RefreshScope beans
+🔹 Important difference from @Aspect
+Feature	@RefreshScope	@Aspect
+Purpose	Dynamic config reload	Cross-cutting logic
+Proxy use	Lazy bean lookup	Method interception
+Interceptors	❌ No interceptor chain	✅ Yes
+AOP?	❌ Not really	✅ Yes
+🔹 Critical insight (interview gold)
+
+Even though @RefreshScope uses a proxy:
+
+It is NOT doing method interception logic like AOP
+
+👉 It’s doing:
+
+Bean lifecycle control
+Dynamic instance swapping
+🔹 Common confusion
+
+❓ Does @RefreshScope use MethodInterceptor?
+
+❌ No
+
+👉 It uses proxy for lookup, not interception chain

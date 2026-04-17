@@ -141,6 +141,9 @@ HOW BTree looks
     <10     10-20    >30
 
 
+A B-tree is a self-balancing tree data structure used by databases to store and retrieve data efficiently from disk.
+
+Think of it like a sorted, multi-level index (like a book index, but smarter).
 
 ![img_5.png](Images/jpaimg6.png)
 

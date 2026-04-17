@@ -849,3 +849,137 @@ Private methods cannot be overridden
 Final methods cannot be overridden
 
 Therefore cannot be proxied.
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+
+🔹 1. Core Difference (this is what interviewers want)
+@Aspect → General-purpose AOP (Spring AOP)
+@PreAuthorize → Security AOP (Spring Security)
+
+Yes, both use proxies—but who creates the proxy and why is completely different.
+
+🔹 2. @Aspect (Spring AOP)
+
+This is your custom cross-cutting logic.
+
+✔ Used for:
+Logging
+Transactions (internally used by Spring)
+Metrics
+Auditing
+✔ Example:
+@Aspect
+@Component
+public class LoggingAspect {
+
+    @Before("execution(* com.app.service.*.*(..))")
+    public void log() {
+        System.out.println("Method called");
+    }
+}
+✔ Key points:
+You define pointcuts (where to intercept)
+You define advice (what to do)
+Fully customizable
+Works at Spring AOP level
+🔹 3. @PreAuthorize (Spring Security)
+
+This is authorization logic, not general AOP.
+
+✔ Used for:
+Role-based access
+Permission checks
+Expression-based security
+✔ Example:
+@PreAuthorize("hasRole('ADMIN')")
+public void deleteUser() { }
+✔ What actually happens:
+Spring Security adds its own method interceptor
+It evaluates the expression (hasRole)
+If fails → throws AccessDeniedException
+🔹 4. Internals (important difference)
+@Aspect
+Uses Spring AOP
+Based on:
+@EnableAspectJAutoProxy
+AspectJExpressionPointcut
+Your defined advices
+@PreAuthorize
+Uses Spring Security method security
+Based on:
+MethodSecurityInterceptor
+AccessDecisionManager
+ExpressionHandler
+
+👉 It is not implemented using your @Aspect class
+
+🔹 5. Are both AOP?
+
+✔ Yes—but different kinds
+
+Feature	@Aspect	@PreAuthorize
+Type	General AOP	Security AOP
+Who defines logic	You	Spring Security
+Purpose	Cross-cutting concerns	Authorization
+Customizable	Fully	Limited (expressions)
+Interceptor	AspectJ advice	Security interceptor
+🔹 6. Key Interview Insight (this is gold)
+
+Even though both:
+
+Use proxies
+Intercept method calls
+
+👉 They are part of different frameworks and pipelines
+
+@Aspect → Runs in Spring AOP chain
+@PreAuthorize → Runs in Security filter/interceptor chain
+
+Also:
+
+Security usually executes before your business logic
+Your @Aspect may run before or after depending on order
+🔹 7. Tricky follow-up they may ask
+❓ Can we replace @PreAuthorize with @Aspect?
+
+👉 Technically yes, but bad idea
+
+Why?
+
+You’d have to manually:
+Get user from SecurityContext
+Write role checks
+Handle exceptions
+
+👉 You’d basically be rebuilding Spring Security
+
+🔹 8. One-line summary
+
+@Aspect is for custom cross-cutting behavior,
+@PreAuthorize is for declarative security enforced by Spring Security internals.
+
+
+
+------------------------------------------------------------------------------------------------------------------
+
+
+🔹 What happens with @Aspect internally
+
+When you enable AOP (@EnableAspectJAutoProxy), Spring:
+
+Creates a proxy for your bean
+JDK dynamic proxy (if interface exists) OR
+CGLIB proxy (if no interface)
+Attaches advisors (built from your @Aspect)
+These advisors contain:
+Pointcut → where to apply
+Advice → what to do
+At runtime:
+Method call → goes to proxy
+Proxy → triggers MethodInterceptor chain
+Your advice runs (@Before, @Around, etc.)
+Then actual method executes

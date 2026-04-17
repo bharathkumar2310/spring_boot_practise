@@ -298,4 +298,211 @@ Deletes customer
 -------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+The N + 1 problem is one of the most common (and most asked) performance issues in Spring Data JPA / Hibernate ORM.
 
+Let’s break it down in a way interviewers expect 👇
+
+🔥 What is N + 1 Problem?
+
+👉 It happens when:
+
+You run 1 query to fetch parent data
+Then N additional queries to fetch child data (one per row)
+📌 Example
+
+Entities:
+
+class User {
+@OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+List<Order> orders;
+}
+❌ Code
+List<User> users = userRepository.findAll();
+
+for (User u : users) {
+System.out.println(u.getOrders().size());
+}
+💥 What happens internally
+
+1 query:
+
+SELECT * FROM users;
+
+Then for each user (N users):
+
+SELECT * FROM orders WHERE user_id = ?;
+
+👉 Total queries = 1 + N
+
+🚨 Why this is BAD
+Huge performance hit
+Too many DB round trips
+Can kill production systems under load
+🔍 Why it happens
+
+Because of:
+👉 FetchType.LAZY
+
+Orders are not loaded initially
+Hibernate loads them on demand (one by one)
+🔥 How to identify (interview tip)
+
+Look for:
+
+Loop + lazy field access
+Too many SQL logs
+✅ Solutions (VERY IMPORTANT)
+✅ 1. Fetch Join (Best & most asked)
+@Query("SELECT u FROM User u JOIN FETCH u.orders")
+List<User> findAllWithOrders();
+
+👉 Loads everything in single query
+
+✅ 2. @EntityGraph
+@EntityGraph(attributePaths = {"orders"})
+List<User> findAll();
+
+👉 Cleaner, Spring Data way
+
+✅ 3. DTO Projection
+SELECT new com.dto.UserDTO(u.name, o.name)
+FROM User u JOIN u.orders o
+
+👉 Fetch only required fields
+
+✅ 4. Batch Fetching (Hibernate specific)
+hibernate.default_batch_fetch_size=10
+
+👉 Converts N queries into batches
+
+⚠️ What NOT to do
+❌ Don’t switch to EAGER blindly
+@OneToMany(fetch = FetchType.EAGER)
+
+👉 Causes:
+
+Huge joins
+Memory issues
+Worse performance sometimes
+💡 Interview-Level Explanation
+
+If asked:
+
+👉 “Explain N+1 problem”
+
+You should say:
+
+“It occurs when fetching a list of entities triggers one query for the parent and additional queries per entity for lazy-loaded associations, leading to 1 + N queries. It’s mainly caused by lazy loading and solved using fetch joins, entity graphs, or projections.”
+
+🎯 Real-world example (what impresses interviewer)
+
+“In a list API returning 100 users, accessing a lazy collection can cause 101 queries. Using JOIN FETCH reduces it to 1 query.”
+
+⚠️ Advanced twist they may ask
+👉 “Can N+1 happen with EAGER?”
+
+✔ YES
+
+If not using join properly
+Hibernate may still fire multiple queries
+🧠 One-line memory trick
+
+👉 “Loop + Lazy = N+1 problem”
+
+
+
+
+🔥 What does JOIN do in JPA?
+
+When you write:
+
+@Query("SELECT u FROM User u JOIN u.orders o")
+List<User> users;
+
+👉 JOIN means:
+
+“Combine User and Orders tables for filtering/querying”
+
+🧠 Important point
+
+👉 JOIN does NOT load the orders into the User object
+
+This is the part most people miss.
+
+📌 What actually happens
+
+Hibernate runs something like:
+
+SELECT u.*
+FROM users u
+JOIN orders o ON u.id = o.user_id;
+
+👉 But:
+
+Only User is populated
+orders is still LAZY (not loaded)
+💥 So what if you access orders?
+for (User u : users) {
+u.getOrders();  // 💥 triggers extra queries
+}
+
+👉 N+1 problem still happens 😬
+
+🔥 Then what is JOIN used for?
+✅ 1. Filtering
+@Query("SELECT u FROM User u JOIN u.orders o WHERE o.status = 'PAID'")
+
+👉 Meaning:
+
+“Give me users who have paid orders”
+✅ 2. Conditions / WHERE clause
+
+You use JOIN to:
+
+filter
+apply conditions
+combine tables logically
+
+👉 Not for fetching data into entity
+
+🚨 Difference: JOIN vs JOIN FETCH
+
+This is a VERY IMPORTANT interview question
+
+❌ JOIN
+SELECT u FROM User u JOIN u.orders o
+Used for filtering
+Does NOT load orders
+Can still cause N+1
+✅ JOIN FETCH
+SELECT u FROM User u JOIN FETCH u.orders
+
+👉 Meaning:
+
+“Load users AND their orders together”
+
+Orders are loaded immediately
+No extra queries
+Solves N+1
+
+
+
+🔥 What @EntityGraph does (simple idea)
+
+👉 @EntityGraph tells JPA:
+
+“Even if this relation is LAZY, fetch it now in this query”
+🔍 Internally what it does
+
+Under the hood (via Hibernate ORM):
+
+👉 It behaves similar to:
+
+SELECT u FROM User u JOIN FETCH u.orders
+
+| Relationship  | Default Fetch Type |
+| ------------- | ------------------ |
+| `@ManyToOne`  | EAGER              |
+| `@OneToOne`   | EAGER              |
+| `@OneToMany`  | LAZY               |
+| `@ManyToMany` | LAZY               |
