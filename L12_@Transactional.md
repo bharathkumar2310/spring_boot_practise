@@ -399,3 +399,93 @@ Start / Join transaction
 Execute method
 ↓
 Commit or Rollback
+
+
+
+✅ Key rule:
+Rolls back on RuntimeException
+❌ Does NOT rollback on checked exceptions (by default)
+Example they may ask:
+@Transactional
+public void test() throws Exception {
+throw new Exception(); // ❓ rollback?
+}
+
+👉 Answer: NO rollback by default
+
+Fix:
+@Transactional(rollbackFor = Exception.class)
+2. ⚠️ Self Invocation Problem (INTERVIEW FAVORITE)
+
+You mentioned it, but this is very commonly asked directly
+
+Scenario:
+public void methodA() {
+methodB(); // ❌ transactional may NOT work
+}
+
+@Transactional
+public void methodB() {}
+
+👉 Problem:
+
+Proxy is bypassed
+No transaction applied
+Expected answer:
+
+Spring AOP works via proxy, so internal method calls don’t go through proxy.
+
+3. ⚠️ When Transaction Starts & Ends
+
+You should clearly say:
+
+Starts → before method execution
+Ends → after method completes
+Commit → if success
+Rollback → if exception
+
+👉 Sounds basic, but interviewers expect clarity
+
+4. ⚠️ ReadOnly Transactions
+
+Very common quick question:
+
+@Transactional(readOnly = true)
+Expected understanding:
+Optimization hint to DB / ORM
+Avoids unnecessary flush
+5. ⚠️ Flush vs Commit (JPA-specific, sometimes asked)
+
+👉 You don’t need deep detail, just:
+
+flush → sync persistence context to DB
+commit → permanently save
+6. ⚠️ Where @Transactional works / doesn’t work
+
+You already touched, but summarize:
+
+Works:
+Public methods
+Called via proxy
+Doesn’t work:
+Private methods
+Self-invocation
+Static methods
+🔥 Optional (only if aiming higher)
+
+Not mandatory, but bonus:
+
+Difference between JPA vs JDBC transaction manager
+Nested transactions (savepoints idea)
+Timeout in transactions
+🎯 Final Checklist (what makes you fully ready)
+
+If you can confidently answer these, you’re done:
+
+✔ What is transaction & why
+✔ Isolation levels + problems
+✔ Propagation (REQUIRED vs REQUIRES_NEW)
+✔ Rollback rules
+✔ Self-invocation problem
+✔ Basic proxy working
+✔ One real-world example
