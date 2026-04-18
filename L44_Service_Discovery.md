@@ -393,3 +393,20 @@ When self-preservation mode is ON:
 ❌ NOT remove instances
 ❌ NOT mark them as DOWN
 ✅ Keep them as UP (even if they might be dead)
+
+
+
+3. 📥 Other services don’t wait for push
+
+Service A does NOT get notified directly.
+
+Instead:
+
+Service A does this:
+Every 30s (default)
+
+Calls Eureka:
+
+GET /eureka/apps
+Downloads updated registry
+Updates local cache

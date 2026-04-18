@@ -717,3 +717,81 @@ If you’re doing login (“Sign in with Google”),
 you’re using **OpenID Connect**, even though it rides on OAuth.
 
 So when you see tokens with user data, you’re actually looking at an **ID token**, not a plain OAuth **access token**.
+
+
+🧠 What is PKCE?
+
+PKCE (Proof Key for Code Exchange) is an extra security layer in OAuth 2.0.
+
+It makes sure that even if someone steals the authorization code, they still cannot get the access token.
+
+🚨 Why PKCE was introduced
+
+In normal OAuth:
+
+App gets authorization code
+Exchanges it for access token
+
+👉 Problem:
+If attacker steals that code → they might try to exchange it
+
+🔐 PKCE solution (core idea)
+
+PKCE adds a secret proof between:
+
+Step 1 (login)
+Step 2 (token exchange)
+⚙️ How PKCE works (simple flow)
+Step 1: App creates a secret
+code_verifier = random_string_123
+Step 2: Create a hash
+code_challenge = hash(code_verifier)
+Step 3: Send challenge during login
+Client → Auth Server
+→ send code_challenge
+Step 4: User logs in → gets authorization code
+Step 5: Exchange code with verifier
+Client → Auth Server
+→ send:
+authorization_code
+code_verifier
+Step 6: Server verifies
+hash(code_verifier) == code_challenge ?
+
+👉 If match → ✅ give access token
+👉 If not → ❌ reject
+
+🔥 What if attacker steals the code?
+
+Attacker has:
+
+authorization_code
+
+But NOT:
+
+code_verifier
+
+👉 So they cannot get token ❌
+
+⚡ Simple analogy
+Authorization code = OTP
+PKCE verifier = PIN linked to OTP
+
+Even if someone sees OTP:
+👉 without PIN → useless
+
+🧠 Where PKCE is used
+
+👉 Required for:
+
+Mobile apps 📱
+Single Page Apps (React, Angular)
+
+Because:
+
+They cannot store client secret securely
+🚨 Without PKCE
+
+Public clients are vulnerable to:
+
+code interception attack

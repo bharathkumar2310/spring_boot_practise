@@ -532,5 +532,11 @@ And call it like:
 -------
 authorize 
 oauth2
-aop 
-transactional
+
+streams
+gateway
+
+data jpa 
+security
+--------------
+
