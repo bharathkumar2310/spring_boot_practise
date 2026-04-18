@@ -795,3 +795,801 @@ They cannot store client secret securely
 Public clients are vulnerable to:
 
 code interception attack
+
+
+![img.png](Images/oauth31.png)
+
+![img_1.png](Images/oauth32.png)
+
+![img_2.png](Images/oauth33.png)
+
+
+![img_3.png](Images/oauth34.png)
+
+![img_4.png](Images/oauth35.png)
+
+✅ 3️⃣ For Spring Boot (OAuth2 Login)
+
+Spring Security **automatically creates a redirect endpoint** for you.  
+The default format is:
+
+`{baseUrl}/login/oauth2/code/{registrationId}`
+
+So, if you are:
+
+- Running locally on port `8080`
+
+- Using registration id = `gitlab` (as per your properties)
+
+
+👉 Your redirect URI should be:
+
+`http://localhost:8080/login/oauth2/code/gitlab
+
+
+![img_5.png](Images/oauth36.png)
+
+![img_6.png](Images/oauth37.png)
+
+![img_7.png](Images/oauth38.png)
+
+![img_8.png](Images/oauth39.png)
+
+![img_9.png](Images/oauth40.png)
+
+![img_10.png](Images/oauth41.png)
+
+![img_11.png](Images/oauth42.png)
+
+Because the link starts with `/` (a **relative path**),  
+and your app is running on `localhost:8080`.
+
+So the browser thinks:
+
+> “Okay, I’m already on http://localhost:8080/login —  
+> now I’ll go to http://localhost:8080/oauth2/authorization/google.”
+
+This hits **your backend server**, not Google (yet).  
+Then Spring Security takes over.
+
+
+## What happens inside backend (Spring filters)
+
+Your backend (Spring Boot app) receives:
+
+`GET /oauth2/authorization/google`
+
+Spring Security’s filter chain catches it — specifically:
+
+`OAuth2AuthorizationRequestRedirectFilter`
+
+That filter says:
+
+> “Ah, this is an OAuth2 login request for `google`.”  
+> “Let me build the Google authorization URL and redirect the browser there.”
+
+Then it sends:
+
+`HTTP 302 Redirect Location: https://accounts.google.com/o/oauth2/v2/auth?client_id=...`
+
+---
+
+## 🧭 5️⃣ Browser follows that redirect
+
+Your browser receives the 302 response,  
+and automatically makes a new request to Google:
+
+`GET https://accounts.google.com/o/oauth2/v2/auth?client_id=...`
+
+Now the flow leaves your backend and goes to Google.## What happens inside backend (Spring filters)
+
+Your backend (Spring Boot app) receives:
+
+`GET /oauth2/authorization/google`
+
+Spring Security’s filter chain catches it — specifically:
+
+`OAuth2AuthorizationRequestRedirectFilter`
+
+That filter says:
+
+> “Ah, this is an OAuth2 login request for `google`.”  
+> “Let me build the Google authorization URL and redirect the browser there.”
+
+Then it sends:
+
+`HTTP 302 Redirect Location: https://accounts.google.com/o/oauth2/v2/auth?client_id=...`
+
+---
+
+## 🧭 5️⃣ Browser follows that redirect
+
+Your browser receives the 302 response,  
+and automatically makes a new request to Google:
+
+`GET https://accounts.google.com/o/oauth2/v2/auth?client_id=...`
+
+Now the flow leaves your backend and goes to Google.
+
+
+![img_12.png](Images/oauth43.png)
+
+![img_13.png](Images/oauth44.png)
+
+![img_14.png](Images/oauth45.png)
+
+![img_15.png](Images/oauth46.png)
+
+![img_16.png](Images/oauth47.png)
+
+![img_17.png](Images/oauth48.png)
+
+![img_18.png](Images/oauth49.png)
+
+![img_19.png](Images/oauth50.png)
+
+![img_20.png](Images/oauth51.png)
+
+![img_21.png](Images/oauth52.png)
+
+![img_22.png](Images/oauth53.png)
+
+![img_23.png](Images/oauth54.png)
+
+![img_24.png](Images/oauth55.png)
+
+![img_25.png](Images/oauth56.png)
+
+![img_26.png](Images/oauth57.png)
+
+0. Preconditions / setup (what must exist)
+
+- `spring-boot-starter-security` and `spring-boot-starter-oauth2-client` on the classpath.
+
+- `application.yml` (or properties) has client registrations like:
+
+  `spring:   security:     oauth2:       client:         registration:           google:             client-id: <id>             client-secret: <secret>             scope: openid, profile, email         provider:           google:             issuer-uri: https://accounts.google.com`
+
+  That `issuer-uri` → Spring fetches `https://accounts.google.com/.well-known/openid-configuration`.
+
+- Spring Security is enabled (default for Spring Boot apps) and you have either `http.oauth2Login()` configured or left defaults.
+
+
+---
+
+## 1. Browser requests a protected resource
+
+- Browser → Tomcat → Spring MVC Dispatcher → Spring Security `FilterChainProxy`.
+
+- Example request:  
+  `GET /secure` with no `JSESSIONID` or no `Authentication` in session.
+
+
+---
+
+## 2. Filter chain detects unauthenticated access
+
+- `FilterChainProxy` runs filters in configured order. Key relevant filters (simplified, showing where things happen):
+
+  1. `SecurityContextPersistenceFilter` (loads SecurityContext from session)
+
+  2. `LogoutFilter`
+
+  3. `CorsFilter` / other filters...
+
+  4. `ExceptionTranslationFilter` (wraps security exceptions)
+
+  5. `OAuth2AuthorizationRequestRedirectFilter` (only handles `/oauth2/authorization/*`)
+
+  6. `OAuth2LoginAuthenticationFilter` (only handles `/login/oauth2/code/*`)
+
+  7. `DefaultLoginPageGeneratingFilter` (may generate default login page)
+
+  8. `FilterSecurityInterceptor` (decides if access allowed)
+
+- `FilterSecurityInterceptor` finds the request requires authentication → throws `AuthenticationException` or calls `AuthenticationEntryPoint`.
+
+- Default `AuthenticationEntryPoint` for OAuth2 is `LoginUrlAuthenticationEntryPoint` which points to either your custom login page (if configured) or the default generated login page.
+
+
+---
+
+## 3. Spring decides to show a login selector (if no custom page)
+
+- If you didn’t supply a custom login page and `oauth2Login()` is active, `DefaultLoginPageGeneratingFilter` **generates an HTML login page** that contains:
+
+  - Optional username/password form (if form login enabled)
+
+  - Links for OAuth providers, e.g. `<a href="/oauth2/authorization/google">Sign in with Google</a>`
+
+- That HTML is returned to the browser (HTTP 200). (If you configured `.loginPage("/my-login")`, Spring will instead redirect to your page.)
+
+
+---
+
+## 4. User initiates provider login (browser follows provider link OR client requested provider directly)
+
+Two entry patterns:
+
+- User clicked a link on the default/custom login page: `GET /oauth2/authorization/google`.
+
+- Or your app redirected directly to `GET /oauth2/authorization/google` (e.g., you set `loginPage("/oauth2/authorization/google")` to force provider login).
+
+
+**Endpoint:** `/oauth2/authorization/{registrationId}`  
+Handled by: `OAuth2AuthorizationRequestRedirectFilter`.
+
+What that filter does:
+
+- Builds an `OAuth2AuthorizationRequest` with:
+
+  - `client_id`, `redirect_uri` (`http://localhost:8080/login/oauth2/code/google`), `response_type=code`, `scope`, `state` (random), and (for public clients) PKCE `code_challenge`.
+
+- Stores the `OAuth2AuthorizationRequest` in `AuthorizationRequestRepository` (default `HttpSessionOAuth2AuthorizationRequestRepository`) — saved in HTTP session.
+
+- Issues a `302 Redirect` to the provider’s authorization endpoint (discovered from the provider configuration or `.well-known/openid-configuration`).
+
+
+**Example Redirect (browser → provider):**
+
+`302 Found Location: https://accounts.google.com/o/oauth2/v2/auth?   client_id=<id>&   redirect_uri=http://localhost:8080/login/oauth2/code/google&   response_type=code&   scope=openid%20profile%20email&   state=<RANDOM_STATE>&   code_challenge=<CHALLENGE>&   code_challenge_method=S256`
+
+---
+
+## 5. Browser goes to provider → user authenticates & consents
+
+- This UI (username/password and consent) is served **by the provider (Google)** on `https://accounts.google.com`. Your app is not involved.
+
+- After successful login+consent, provider redirects browser back to your `redirect_uri`:
+
+
+**Provider → Browser → Your App:**
+
+`GET http://localhost:8080/login/oauth2/code/google?code=<AUTH_CODE>&state=<RANDOM_STATE>`
+
+---
+
+## 6. Spring receives callback: `OAuth2LoginAuthenticationFilter` intercepts
+
+- `OAuth2LoginAuthenticationFilter` is mapped to `/login/oauth2/code/*`. It:
+
+  - Reads `code` and `state` query params.
+
+  - Retrieves the saved `OAuth2AuthorizationRequest` from session (via `AuthorizationRequestRepository`) and validates `state` (CSRF protection).
+
+  - If PKCE used, it also retrieves saved `code_verifier`.
+
+  - Creates an `OAuth2AuthorizationExchange` (request+response), then an `OAuth2AuthorizationCodeGrantRequest`.
+
+
+Then the filter calls the `AuthenticationManager`.
+
+---
+
+## 7. AuthenticationManager → OAuth2LoginAuthenticationProvider (token exchange)
+
+- `AuthenticationManager` delegates to `OAuth2LoginAuthenticationProvider`.
+
+- `OAuth2LoginAuthenticationProvider` uses an `OAuth2AccessTokenResponseClient` (default `DefaultAuthorizationCodeTokenResponseClient`) to exchange the code for tokens.
+
+
+**Server → Provider (token exchange, POST):**
+
+`POST https://oauth2.googleapis.com/token Content-Type: application/x-www-form-urlencoded  grant_type=authorization_code& code=<AUTH_CODE>& redirect_uri=http://localhost:8080/login/oauth2/code/google& client_id=<id>& client_secret=<secret>& code_verifier=<VERIFIER> (if PKCE)`
+
+**Provider Response (200 OK JSON):**
+
+`{   "access_token":"ya29....",   "expires_in":3599,   "refresh_token":"1//0g....",         // maybe, if allowed   "scope":"openid profile email",   "token_type":"Bearer",   "id_token":"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..." // for OIDC providers }`
+
+---
+
+## 8. ID Token verification & UserInfo retrieval (OIDC)
+
+- If `id_token` exists (OIDC):
+
+  - Spring constructs an `OidcIdToken` and verifies:
+
+    - Signature using `jwks_uri` (public keys) — Spring will fetch JWKs from provider’s `jwks_uri`.
+
+    - Claims: `iss` (issuer), `aud` (include client_id), `exp` (not expired), optionally `nonce`.
+
+  - `OidcUserService` will map claims to an `OidcUser` and (by default) call the `userinfo_endpoint` (with `Authorization: Bearer <access_token>`) to get additional profile attributes.
+
+- If OIDC not used, Spring calls `userinfo_endpoint` to fetch attributes (via `OAuth2UserService`).
+
+
+**Server → Provider (userinfo call):**
+
+`GET https://openidconnect.googleapis.com/v1/userinfo Authorization: Bearer <access_token>`
+
+**Response:**
+
+`{   "sub":"1134234...",   "name":"Bharath",   "email":"bharath@gmail.com",   "picture":"https://..." }`
+
+---
+
+## 9. Build Authentication & set SecurityContext
+
+- `OAuth2LoginAuthenticationProvider` creates an `Authentication` instance:
+
+  - For OIDC: `OidcAuthenticationToken` / `OidcUser`
+
+  - For OAuth2: `OAuth2AuthenticationToken` / `OAuth2User`
+
+  - Authorities are mapped from default roles or using `GrantedAuthoritiesMapper`.
+
+- Spring populates `SecurityContextHolder.getContext().setAuthentication(authentication)`.
+
+- `HttpSessionSecurityContextRepository` persists the `SecurityContext` in the HTTP session so subsequent requests are authenticated.
+
+
+---
+
+## 10. Persist Authorized Client (tokens) — `OAuth2AuthorizedClient`
+
+- Spring constructs an `OAuth2AuthorizedClient` (clientRegistration + principalName + accessToken + refreshToken).
+
+- Stored via `OAuth2AuthorizedClientService` (default `InMemoryOAuth2AuthorizedClientService`) or `OAuth2AuthorizedClientRepository` (session-backed by default).
+
+- This storage lets you later obtain the access token for calling resource servers (`@RegisteredOAuth2AuthorizedClient`, `OAuth2AuthorizedClientService`, or `OAuth2AuthorizedClientManager`).
+
+
+---
+
+## 11. Success handler and redirect
+
+- After successful authentication, `AuthenticationSuccessHandler` runs:
+
+  - Default behavior: redirect to originally requested URL (saved in `SavedRequest`) or to a default success URL you can configure (`.defaultSuccessUrl()`).
+
+- Browser receives redirect → follows to the protected resource (now authenticated).
+
+## **Step 3 — Spring handles callback**
+
+The request hits the internal filter:
+
+### ✔️ **OAuth2LoginAuthenticationFilter**
+
+This filter:
+
+1. Reads `code` from query params
+
+2. Calls Google token endpoint
+
+3. Gets:
+
+  - access token
+
+  - ID token (if OpenID)
+
+  - userinfo attributes
+
+4. Creates:
+
+  - `OAuth2AuthenticationToken`
+
+  - `OAuth2User` principal
+
+
+📌 **At this point user is AUTHENTICATED.**
+
+---
+
+## **Step 4 — NOW the success handler is called**
+
+Right after authentication succeeds:
+
+### ✔️ **OAuth2LoginAuthenticationFilter → successHandler.onAuthenticationSuccess()**
+
+This is exactly where your success handler comes in.
+
+Spring calls it automatically.
+
+### Your handler:
+
+`@Override public void onAuthenticationSuccess(HttpServletRequest request,                                     HttpServletResponse response,                                     Authentication authentication)`
+
+### What YOU can do in this method:
+
+- return JSON
+
+- redirect to a URL
+
+- create your own JWT
+
+- persist user
+
+- log activity
+
+- set cookies
+
+- set session attributes
+
+- etc.
+
+
+---
+
+## 12. Subsequent requests (session-based authentication)
+
+- Browser includes `JSESSIONID` cookie in later requests.
+
+- `SecurityContextPersistenceFilter` loads `SecurityContext` (contains `Authentication`) from session and sets it on `SecurityContextHolder`.
+
+- Controllers can access principal via `@AuthenticationPrincipal`, `Authentication` parameter, or `SecurityContextHolder`.
+
+
+---
+
+## 13. Token refresh (when access token expires)
+
+- If `OAuth2AuthorizedClient` contains a `refresh_token` and you need a new access token:
+
+  - Use `OAuth2AuthorizedClientManager` or implement refresh logic:
+
+    - `POST` to token endpoint with `grant_type=refresh_token` and `refresh_token=<token>`.
+
+  - Spring’s `AuthorizedClientManager` implementations can refresh tokens when you use `WebClient` integration with `ServletOAuth2AuthorizedClientExchangeFilterFunction`.
+
+
+---
+
+## 14. Logout
+
+- If user logs out (`/logout`):
+
+  - `LogoutFilter` clears `SecurityContext` and invalidates session by default.
+
+  - If you want to log out at the provider (single logout), you must call provider’s end-session endpoint (if provided) manually, and maybe redirect user there, including `id_token_hint` and `post_logout_redirect_uri` per provider spec.
+
+
+---
+
+## 15. Security extension points & classes you can override (where to hook in)
+
+- `ClientRegistrationRepository` — contains client registrations.
+
+- `OAuth2AuthorizationRequestRepository` — (default: `HttpSessionOAuth2AuthorizationRequestRepository`) stores the initial authorization request — override to store in cookie/db.
+
+- `OAuth2AccessTokenResponseClient` — exchange code for token (replace to customize token request).
+
+- `OAuth2UserService` / `OidcUserService` — map token/claims → `OAuth2User` / `OidcUser` (common place to create/lookup application user).
+
+- `AuthenticationSuccessHandler` / `AuthenticationFailureHandler` — custom post-login logic (persist tokens, create local users, redirect).
+
+- `OAuth2AuthorizedClientService` — persist authorized client (tokens) (default in-memory; replace with DB-backed).
+
+- `OAuth2AuthorizedClientManager` — manage authorized clients and token refresh for outgoing requests (used by `WebClient`).
+
+
+---
+
+## 16. Exact endpoints & URLs involved (summary)
+
+- App endpoints:
+
+  - `GET /secure` (your protected resource)
+
+  - `GET /oauth2/authorization/{registrationId}` (trigger authorization request — redirect filter)
+
+  - `GET /login/oauth2/code/{registrationId}` (callback endpoint — login filter)
+
+  - (optional) `/logout`
+
+- Provider endpoints (discovered via `issuer-uri/.well-known/openid-configuration`):
+
+  - `authorization_endpoint` (e.g. `https://accounts.google.com/o/oauth2/v2/auth`)
+
+  - `token_endpoint` (e.g. `https://oauth2.googleapis.com/token`)
+
+  - `userinfo_endpoint` (e.g. `https://openidconnect.googleapis.com/v1/userinfo`)
+
+  - `jwks_uri` (where to fetch provider public keys)
+
+  - (optional) `end_session_endpoint` (if the provider supports logout)
+
+
+---
+
+## 17. Security checks Spring performs automatically
+
+- `state` parameter validation (prevents CSRF in OAuth flow)
+
+- PKCE verification (if used)
+
+- Client authentication to token endpoint (`client_secret_basic` or `client_secret_post`)
+
+- `id_token` signature verification using JWKs
+
+- `id_token` claims validation (`iss`, `aud`, `exp`, `iat`, `nonce` if used)
+
+
+
+# ✅ **AFTER GOOGLE RETURNS AUTHORIZATION CODE — FULL SPRING SECURITY FLOW**
+
+## **1️⃣ User tries to access a protected endpoint**
+
+Example:  
+`GET /home`
+
+Spring Security sees the user is not authenticated → triggers OAuth2 login.
+
+`OAuth2AuthorizationRequestRedirectFilter`
+
+This filter redirects the browser to:
+
+`https://accounts.google.com/o/oauth2/v2/auth?...&redirect_uri=...`
+
+---
+
+# **2️⃣ User logs in at Google → Google redirects back**
+
+Google redirects the browser to your backend:
+
+`GET /login/oauth2/code/google?code=AUTH_CODE`
+
+This goes to:
+
+`OAuth2LoginAuthenticationFilter`
+
+This moment is **MOST IMPORTANT**.
+
+---
+
+# **3️⃣ Spring Security exchanges AUTH_CODE for ACCESS_TOKEN + ID_TOKEN**
+
+The filter uses:
+
+`DefaultAuthorizationCodeTokenResponseClient`
+
+to call Google:
+
+`POST https://oauth2.googleapis.com/token`
+
+Google responds with:
+
+- **access_token**
+
+- **id_token**
+
+- **expires_in**
+
+- **refresh_token** (maybe)
+
+- **token_type**
+
+
+Spring Security now has ALL the tokens internally.
+
+---
+
+# **4️⃣ SPRING CREATES AN OAUTH2USER**
+
+Spring extracts user details from:
+
+### ✔ **id_token → OIDC claims**
+
+(contains email, name, sub etc.)
+
+### ✔ or access_token userinfo endpoint
+
+It creates:
+
+`OAuth2User / OidcUser`
+
+This is the authenticated principal stored in:
+
+`SecurityContextHolder`
+
+✔ At THIS MOMENT the user is authenticated  
+✔ Tokens are NOT yet shown to you  
+✔ No redirect performed yet
+
+---
+
+# **5️⃣ Now Spring calls your `AuthenticationSuccessHandler`**
+
+Your configured success handler runs **right after successful authentication**, BEFORE redirecting the browser.
+
+### Example:
+
+`http.oauth2Login(oauth ->     oauth.successHandler(customSuccessHandler) );`
+
+Spring calls:
+
+`customSuccessHandler.onAuthenticationSuccess(request, response, authentication)`
+
+### What do you get in `authentication`?
+
+You get:
+
+`OAuth2AuthenticationToken    → OAuth2User principal        → attributes from google        → access token        → id token`
+
+You can extract:
+
+- Google **access token**
+
+- Google **ID token**
+
+- User’s email, name, picture, etc.
+
+
+---
+
+# **6️⃣ What do you DO in the success handler?**
+
+Typical actions:
+
+### 👉 **Generate your own JWT**
+
+Because Google access token **must never be used directly to access your API**.
+
+`String jwt = jwtService.generateToken(principal); response.sendRedirect("/home?token=" + jwt);`
+
+### 👉 Or redirect to frontend (if exists)
+
+### 👉 Or just redirect to a normal page (no JWT)
+
+---
+
+# **7️⃣ After success handler → request goes to your controller**
+
+User is now authenticated inside Spring.
+
+So:
+
+`@GetMapping("/home") public String home() {     OAuth2User user = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();     ... }`
+
+Now you have:
+
+### ✔ email
+
+### ✔ name
+
+### ✔ picture
+
+### ✔ Google tokens if you want to store them
+
+
+
+
+###### ChatGPT said:
+
+Great question — and this is a **crucial concept in OAuth + OIDC**.
+
+Spring Boot **can decode Google’s ID Token (JWT) WITHOUT the private key** because:
+
+# ✅ **Google publishes its PUBLIC KEYS (JWKS) online**
+
+Google signs the **ID Token** using its **private key**, but the corresponding **public key** is public and available here:
+
+`https://www.googleapis.com/oauth2/v3/certs`
+
+This is called a **JWKS endpoint** (JSON Web Key Set).
+
+Spring Security automatically downloads these keys.
+
+---
+
+# 🔥 FULL EXPLANATION (VERY CLEAR)
+
+## 1️⃣ Google signs ID Token using its private key
+
+`Google private key → signs ID_TOKEN → sent to Spring`
+
+Nobody (including Spring) knows the private key.  
+Only Google.
+
+---
+
+## 2️⃣ Google publishes PUBLIC KEYS openly
+
+Spring retrieves Google JWKS automatically:
+
+`https://www.googleapis.com/oauth2/v3/certs`
+
+These public keys:
+
+- Are rotated by Google
+
+- Are used ONLY to verify signatures
+
+- Do NOT allow Spring to create/forge tokens
+
+
+---
+
+## 3️⃣ Spring Security uses the `kid` header to pick correct public key
+
+Google ID token header:
+
+`{   "alg": "RS256",   "kid": "abc123" }`
+
+Spring looks at the `kid` → downloads matching public key from JWKS → verifies JWT signature.
+
+This is **standard OpenID Connect behavior**.
+
+---
+
+# 🔐 **Why this is secure?**
+
+Because:
+
+- Only Google has the **private key** → only Google can sign tokens.
+
+- Anyone (Spring, GitHub, your backend) can use the **public key** → to verify signature.
+
+
+This is how **public key cryptography** works.
+
+---
+
+# 🧠 **Where does Spring do this?**
+
+This handler processes OIDC login:
+
+`OidcAuthorizationCodeAuthenticationProvider`
+
+It internally uses:
+
+`NimbusJwtDecoder`
+
+With:
+
+`fromIssuerLocation("https://accounts.google.com")`
+
+This automatically configures JWKS fetching.
+
+---
+
+# ✔ So the steps are:
+
+### 1. Google sends ID token (JWT) to your backend
+
+### 2. Spring sees JWT → checks header → finds `kid`
+
+### 3. Spring downloads Google's JWKS
+
+### 4. Spring picks the correct public key
+
+### 5. Spring verifies the signature
+
+### 6. If valid → creates OidcUser
+
+---
+
+# 🧩 PROOF (SPRING CONFIG)
+
+Your `application.yml`:
+
+`spring:   security:     oauth2:       client:         registration:           google:             client-id: xxx             client-secret: yyy         provider:           google:             issuer-uri: https://accounts.google.com`
+
+Because you provide:
+
+`issuer-uri`
+
+Spring **automatically** loads the Google config:
+
+`https://accounts.google.com/.well-known/openid-configuration     → contains link to JWKS endpoint`
+
+Which contains:
+
+`jwks_uri: "https://www.googleapis.com/oauth2/v3/certs"`
+
+---
+
+# ⭐ Final Summary
+
+### ✔ Google ID Token = signed by Google using **private key**
+
+### ✔ Google publishes **public keys** → JWKS
+
+### ✔ Spring downloads them automatically
+
+### ✔ JWT signature can be verified with public key
+
+### ✔ No need for private key
+
+### ✔ No security risk
+
+This is EXACTLY how **OIDC login works in all providers** (Google, GitHub, Facebook, etc.)
