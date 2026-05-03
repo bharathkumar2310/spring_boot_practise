@@ -314,3 +314,16 @@ This represents:
 
       It does NOT represent the bean instance.
       It represents annotation information only.
+
+
+
+🔥 3. What is ConditionContext?
+
+👉 Gives runtime info:
+
+Environment (properties)
+BeanFactory
+ClassLoader
+Registry
+
+👉 Used inside matches() to decide

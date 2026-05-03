@@ -540,3 +540,41 @@ data jpa
 security
 --------------
 
+
+| Topic                  | Subtopics to Cover                                                                    | Depth | What Interviewers Expect                            |
+| ---------------------- | ------------------------------------------------------------------------------------- | ----- | --------------------------------------------------- |
+| Spring Core (IOC & DI) | IOC concept, Dependency Injection (constructor vs field vs setter), Bean creation     | ⭐⭐⭐⭐⭐ | Clear understanding of how dependencies are managed |
+| Bean Lifecycle         | Bean creation, initialization, destruction, scopes (singleton basics)                 | ⭐⭐⭐⭐⭐ | Very common + follow-ups                            |
+| Spring Annotations     | `@Component`, `@Service`, `@Repository`, `@Controller`, `@Autowired`                  | ⭐⭐⭐⭐  | Usage + differences                                 |
+| Spring Boot Internals  | How app starts, `SpringApplication.run()`, auto-configuration concept                 | ⭐⭐⭐⭐⭐ | Most people fail here                               |
+| Request Flow           | DispatcherServlet (high-level), flow: Controller → Service → Repository               | ⭐⭐⭐⭐⭐ | Must explain end-to-end                             |
+| REST API Development   | `@RestController`, `@RequestMapping`, GET/POST/PUT/DELETE                             | ⭐⭐⭐⭐  | Practical API building                              |
+| Exception Handling     | `@ControllerAdvice`, `@ExceptionHandler`, global handling                             | ⭐⭐⭐⭐  | Clean API design                                    |
+| Transactions           | `@Transactional`, propagation (REQUIRED, REQUIRES_NEW), rollback rules, proxy concept | ⭐⭐⭐⭐⭐ | VERY important topic                                |
+| Spring Data JPA        | `JpaRepository`, CRUD ops, basic query methods                                        | ⭐⭐⭐⭐  | Used in almost all projects                         |
+
+
+
+| Topic                   | Subtopics to Cover                                          | Depth | What Interviewers Expect       |
+| ----------------------- | ----------------------------------------------------------- | ----- | ------------------------------ |
+| Bean Scopes             | Singleton, Prototype                                        | ⭐⭐⭐   | When to use                    |
+| Configuration           | `@Configuration`, `@Bean`                                   | ⭐⭐⭐   | How beans are defined manually |
+| Application Properties  | `application.properties` / `application.yml`, config values | ⭐⭐⭐   | External config handling       |
+| Profiles                | `@Profile`, environment-based configs                       | ⭐⭐⭐   | Real-world usage               |
+| Filters vs Interceptors | Difference, use cases                                       | ⭐⭐⭐⭐  | Common interview question      |
+| Validation              | `@Valid`, basic validation annotations                      | ⭐⭐⭐   | API validation                 |
+| DTO Pattern             | Entity vs DTO separation                                    | ⭐⭐⭐   | Clean architecture             |
+| Logging                 | Basic logging usage                                         | ⭐⭐    | Awareness                      |
+| Spring Boot Actuator    | Health check basics                                         | ⭐⭐    | Monitoring awareness           |
+
+SPring testing
+
+| Topic                        | Subtopics to Cover                               | Depth | What Interviewers Expect |
+| ---------------------------- | ------------------------------------------------ | ----- | ------------------------ |
+| Spring Security              | Basic auth vs JWT (only basics unless in resume) | ⭐⭐    | High-level understanding |
+| Caching                      | `@Cacheable`, basics                             | ⭐⭐    | When to use              |
+| Async Processing             | `@Async` basics                                  | ⭐⭐    | Awareness                |
+| Spring Events                | Event publishing/listening                       | ⭐     | Rare                     |
+| WebFlux                      | Reactive basics                                  | ⭐     | Rare unless used         |
+| Custom Starter / Auto Config | Deep internals                                   | ⭐     | Advanced/rare            |
+
