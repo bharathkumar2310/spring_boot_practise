@@ -34,20 +34,20 @@ Exception Handling:
 ExceptionHandler is for handling exception in that particular controller
 Controller Advice is used for global exception handling
 
-
-Application starts
-↓
-Beans created
-↓
-BeanPostProcessors finish
-↓
-ExceptionHandlerExceptionResolver.afterPropertiesSet()
-↓
-Scans controllers & advice
-↓
-Caches exception handler mappings
-↓
-App ready
+    
+    Application starts
+    ↓
+    Beans created
+    ↓
+    BeanPostProcessors finish
+    ↓
+    ExceptionHandlerExceptionResolver.afterPropertiesSet()
+    ↓
+    Scans controllers & advice
+    ↓
+    Caches exception handler mappings
+    ↓
+    App ready
 
 
 SO when it goes to exception handler exception resolver it checks for the @exception/@controllerAdvice mapping if present it calls that excption method

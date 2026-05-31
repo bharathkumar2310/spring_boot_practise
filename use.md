@@ -578,3 +578,4 @@ SPring testing
 | WebFlux                      | Reactive basics                                  | ⭐     | Rare unless used         |
 | Custom Starter / Auto Config | Deep internals                                   | ⭐     | Advanced/rare            |
 
+mvn clean install -s C:\Users\bharathkumar.y\.m2\settings-temp.xml

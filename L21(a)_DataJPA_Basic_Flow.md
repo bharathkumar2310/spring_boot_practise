@@ -238,20 +238,47 @@ That’s why you don’t need to call `save()` again after changing a managed en
 
 ## 🧩 🔄 Flow Summary Table
 
-|Step|Layer|Class / Component|What Happens|
-|---|---|---|---|
-|1|Spring Boot|`@EnableJpaRepositories`|Repository scanning and proxy creation|
-|2|Repository|`JpaRepositoryFactoryBean` → `SimpleJpaRepository`|Real implementation of your interface|
-|3|App Call|`userRepository.save(user)`|Method hits proxy → SimpleJpaRepository|
-|4|Decision|`isNew()` check|Based on ID or version|
-|5|New Entity|`EntityManager.persist()`|Adds entity to Persistence Context|
-|6|Existing Entity|`EntityManager.merge()`|Merges state to managed copy|
-|7|Transaction|`@Transactional`|Binds Persistence Context to thread|
-|8|Flush|Hibernate Session|Executes queued SQL statements|
-|9|Commit|TransactionManager|Commits DB transaction, clears context|
+| Step | Layer           | Class / Component                                  | What Happens                            |
+|------|-----------------|----------------------------------------------------|-----------------------------------------|
+| 1    | Spring Boot     | `@EnableJpaRepositories`                           | Repository scanning and proxy creation  |
+| 2    | Repository      | `JpaRepositoryFactoryBean` → `SimpleJpaRepository` | Real implementation of your interface   |
+| 3    | App Call        | `userRepository.save(user)`                        | Method hits proxy → SimpleJpaRepository |
+| 4    | Decision        | `isNew()` check                                    | Based on ID or version                  |
+| 5    | New Entity      | `EntityManager.persist()`                          | Adds entity to Persistence Context      |
+| 6    | Existing Entity | `EntityManager.merge()`                            | Merges state to managed copy            |
+| 7    | Transaction     | `@Transactional`                                   | Binds Persistence Context to thread     |
+| 8    | Flush           | Hibernate Session                                  | Executes queued SQL statements          |
+| 9    | Commit          | TransactionManager                                 | Commits DB transaction, clears context  |
 
 ---
 
 ## 🧠 Visualization of Flow
 
-`[Controller]      ↓ [Service Layer]      ↓ (calls) UserRepository.save(user)      ↓ [Proxy Repository Bean]      ↓ SimpleJpaRepository.save()      ↓ EntityManager.persist() or merge()      ↓ Hibernate Persistence Context      ↓ Flush on Commit → SQL INSERT/UPDATE      ↓ Database`
+`[Controller]     
+ ↓
+ [Service Layer]      
+ ↓ 
+ (calls) UserRepository.save(user)      
+ ↓ 
+ [Proxy Repository Bean]      
+ ↓ 
+ SimpleJpaRepository.save()      
+ ↓ 
+ EntityManager.persist() or merge()      
+ ↓ 
+ Hibernate Persistence Context      
+ ↓ 
+ Flush on Commit → SQL INSERT/UPDATE      
+ ↓ 
+ Database`
+
+
+| Operation Type             | What We Write                                         | Who Creates Query?      | Query Type Generated         | Notes                               |
+| -------------------------- | ----------------------------------------------------- | ----------------------- | ---------------------------- | ----------------------------------- |
+| Derived Query Method       | `findByName()`                                        | Spring Data JPA         | JPQL/HQL                     | Hibernate later converts JPQL → SQL |
+| JPQL `@Query`              | `@Query("SELECT e FROM Emp e")`                       | Developer writes JPQL   | JPQL/HQL                     | Hibernate converts to SQL           |
+| Native Query               | `@Query(value="SELECT * FROM emp", nativeQuery=true)` | Developer writes SQL    | SQL directly                 | Hibernate sends SQL directly to DB  |
+| CRUD Repository Methods    | `save()`, `findById()`, `delete()`                    | Spring Data + Hibernate | HQL/JPQL internally (mostly) | Hibernate generates SQL eventually  |
+| EntityManager JPQL         | `createQuery()`                                       | Developer               | JPQL/HQL                     | Converted to SQL                    |
+| EntityManager Native Query | `createNativeQuery()`                                 | Developer               | SQL                          | Direct execution                    |
+| Criteria API               | `CriteriaBuilder`                                     | Hibernate/JPA           | JPQL-like internal model     | Hibernate converts to SQL           |

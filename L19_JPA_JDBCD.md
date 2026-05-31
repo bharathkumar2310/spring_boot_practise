@@ -29,6 +29,15 @@ JDBC : (Java DataBase Connectivity)
         │ (MySQL, Oracle, PostgreSQL...)│
         └───────────────────────────────┘
 
+ 
+    No. Java Database Connectivity (JDBC) is mainly designed for relational databases (table-based databases), but it is not limited only to traditional tables.
+    But some NoSQL databases also provide JDBC drivers, even though they are not table-based internally.
+    
+    Examples:
+        
+        MongoDB
+        Apache Cassandra
+
 ![img_1.png](Images/dbms2.png)
 
 

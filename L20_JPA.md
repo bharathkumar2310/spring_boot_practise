@@ -88,6 +88,9 @@ Instead of using dataJPA's save if u use enityManger.persist() without @Transact
 ![img_10.png](Images/JPA17.png)
 
 
+A new EntityManager is effectively used per transaction/request
+
+
 Step 1: **Creation (Open Persistence Context)**
 
 - Happens when an **EntityManager** is created.

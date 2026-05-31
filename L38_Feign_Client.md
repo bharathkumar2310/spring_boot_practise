@@ -453,3 +453,8 @@ Interceptor Example:
     .build();
 
 
+    
+    Both RestTemplate and Feign interceptors intercept outgoing HTTP requests.
+    RestTemplate uses ClientHttpRequestInterceptor in imperative style, while Feign uses RequestInterceptor in declarative proxy-based style.
+    Feign interceptors are generally cleaner and require less boilerplate for microservices communication.
+

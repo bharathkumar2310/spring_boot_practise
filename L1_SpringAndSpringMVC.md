@@ -300,66 +300,57 @@ _**Important Flow of a HttpRequest**_
 🌍 0️⃣ Client Sends HTTP Request
 
 Example:
-
-POST /users/10?role=admin HTTP/1.1
-Host: localhost:8080
-Content-Type: application/json
-Content-Length: 35
-
-{
-"name": "Bharath",
-"age": 25
-}
+    
+    POST /users/10?role=admin HTTP/1.1
+    Host: localhost:8080
+    Content-Type: application/json
+    Content-Length: 35
+    
+    {
+    "name": "Bharath",
+    "age": 25
+    }
 
 
 This entire HTTP message is sent as raw TCP bytes.
 
 🧠 1️⃣ OS + TCP Layer
-
-Server OS listens on port 8080
-
-TCP connection established (3-way handshake)
-
-Data arrives as packets
-
-Passed to Tomcat process
-
-Spring is NOT involved yet.
+        
+        Server OS listens on port 8080
+        TCP connection established (3-way handshake)
+        Data arrives as packets
+        Passed to Tomcat process
+        Spring is NOT involved yet.
 
 🧠 2️⃣ Tomcat (Servlet Container) Layer
 
 Tomcat does:
 
 ✅ Accept connection
-
 Using Connector (e.g., NIO)
 
 ✅ Parse HTTP
-
 Tomcat HTTP parser separates:
-
-Method → POST
-
-URI → /users/10
-
-Query → role=admin
-
-Headers
+        
+        Method → POST
+        URI → /users/10
+        Query → role=admin
+        Headers
 
 Body
 
 ✅ Create Objects
 
 Tomcat creates:
-
-org.apache.catalina.connector.Request
-org.apache.catalina.connector.Response
+    
+    org.apache.catalina.connector.Request
+    org.apache.catalina.connector.Response
 
 
 These implement:
-
-HttpServletRequest
-HttpServletResponse
+    
+    HttpServletRequest
+    HttpServletResponse
 
 
 Body is stored as InputStream inside request.
@@ -371,16 +362,12 @@ Before Spring sees request:
 Tomcat builds a FilterChain
 
 This may include:
-
-Security filters
-
-Logging filters
-
-CORS filter
-
-Spring Security filter
-
-Custom filters
+        
+        Security filters
+        Logging filters
+        CORS filter
+        Spring Security filter
+        Custom filters
 
 Each filter:
 
@@ -389,7 +376,7 @@ doFilter(request, response, chain)
 
 Eventually calls:
 
-chain.doFilter()
+    chain.doFilter()
 
 
 If any filter blocks request → controller never executes.
@@ -398,7 +385,7 @@ If any filter blocks request → controller never executes.
 
 Tomcat calls:
 
-dispatcherServlet.service(request, response)
+    dispatcherServlet.service(request, response)
 
 
 Now Spring MVC starts.
@@ -414,79 +401,61 @@ Inside this method:
 
 🔹 Step 5.1: HandlerMapping
 
-Spring checks all registered HandlerMapping beans.
+    Spring checks all registered HandlerMapping beans.
 
-Usually:
-
-RequestMappingHandlerMapping
+Usually: RequestMappingHandlerMapping
 
 
 It matches:
+        
+        HTTP method
+        URL
+        Path variables
+        Produces/Consumes conditions
 
-HTTP method
-
-URL
-
-Path variables
-
-Produces/Consumes conditions
-
-It finds:
-
-@PostMapping("/users/{id}")
+It finds: @PostMapping("/users/{id}")
 
 
-Returns:
-
-HandlerExecutionChain
+Returns: HandlerExecutionChain
 
 
 Which contains:
-
-Controller method
-
-Interceptors (if any)
+        
+        Controller method
+        Interceptors (if any)
 
 🧠 6️⃣ Interceptors (PreHandle Phase)
 
-If interceptors exist:
-
-preHandle(request, response)
+If interceptors exist: preHandle(request, response)
 
 
 Examples:
-
-Logging
-
-Auth check
-
-Metrics
+    
+    Logging
+    Auth check
+    Metrics
 
 If preHandle() returns false → request stops.
 
 🧠 7️⃣ HandlerAdapter
 
-Spring selects:
-
-RequestMappingHandlerAdapter
+Spring selects: RequestMappingHandlerAdapter
 
 
 This adapter:
-
-Resolves arguments
-
-Invokes controller
-
-Handles return value
+    
+    Resolves arguments
+    Invokes controller
+    Handles return value
 
 🧠 8️⃣ Argument Resolution (Critical Step)
 
 Spring inspects method parameters:
-
-public User save(
-@PathVariable Long id,
-@RequestParam String role,
-@RequestBody User user)
+    
+    public User save(
+    @PathVariable Long id,
+    @RequestParam String role,
+    @RequestBody User user)
 
 
 For each parameter, it finds a matching:
@@ -495,51 +464,39 @@ HandlerMethodArgumentResolver
 
 🔹 8.1 @PathVariable
 
-Uses:
+Uses: PathVariableMethodArgumentResolver
 
-PathVariableMethodArgumentResolver
-
-
-Gets value from URI template
-Uses ConversionService
-Converts String → Long
+    
+    Gets value from URI template
+    Uses ConversionService
+    Converts String → Long
 
 🔹 8.2 @RequestParam
 
-Uses:
-
-RequestParamMethodArgumentResolver
+Uses: RequestParamMethodArgumentResolver
 
 
 Reads from:
 
 request.getParameter("role")
 
-
 Converts String → target type
 
 🔹 8.3 @RequestBody
 
-Uses:
-
-RequestResponseBodyMethodProcessor
+Uses:RequestResponseBodyMethodProcessor
 
 
 Steps:
 
 Reads request.getInputStream()
-
 Checks Content-Type
-
 Chooses HttpMessageConverter
-
 For JSON → MappingJackson2HttpMessageConverter
 
 Calls:
 
-objectMapper.readValue(...)
-
-
+    objectMapper.readValue(...)
 JSON → User object
 
 Now all parameters are resolved.
@@ -552,46 +509,34 @@ method.invoke(controller, arguments)
 
 
 Controller logic runs.
-
-Returns something:
-
-Object
-
-String
-
-ResponseEntity
-
-void
+    
+    Returns something:
+    Object
+    String
+    ResponseEntity
+    void
 
 🧠 🔟 Return Value Handling
 
 Spring checks return type.
 
-Uses:
-
-HandlerMethodReturnValueHandler
+Uses:HandlerMethodReturnValueHandler
 
 
 Cases:
 
 🔹 If @ResponseBody / @RestController
 
-Uses:
-
-RequestResponseBodyMethodProcessor
+Uses:RequestResponseBodyMethodProcessor
 
 
 Steps:
+    
+    Takes return object
+    Chooses HttpMessageConverter
+    Converts Object → JSON
 
-Takes return object
-
-Chooses HttpMessageConverter
-
-Converts Object → JSON
-
-Writes to:
-
-response.getOutputStream()
+Writes to: response.getOutputStream()
 
 🔹 If View Name (MVC)
 
@@ -599,10 +544,10 @@ Uses:
 
 ViewResolver
 
-
-Finds template (Thymeleaf/JSP)
-Renders HTML
-Writes to response.
+    
+    Finds template (Thymeleaf/JSP)
+    Renders HTML
+    Writes to response.
 
 🧠 1️⃣1️⃣ Interceptors (PostHandle + AfterCompletion)
 
@@ -644,43 +589,57 @@ Sends back to client
 Connection may close or stay alive (keep-alive).
 
 🔥 Full Visual Flow
-Client
-↓
-TCP Layer
-↓
-Tomcat Connector
-↓
-HTTP Parser
-↓
-Create HttpServletRequest/Response
-↓
-Filter Chain
-↓
-DispatcherServlet
-↓
-HandlerMapping
-↓
-Interceptors (preHandle)
-↓
-HandlerAdapter
-↓
-ArgumentResolvers
-↓
-Controller
-↓
-ReturnValueHandler
-↓
-HttpMessageConverter
-↓
-Write to HttpServletResponse
-↓
-Interceptors (postHandle)
-↓
-Tomcat flushes response
-↓
-Client receives response
+        
+        _Client
+        ↓
+        TCP Layer
+        ↓
+        Tomcat Connector
+        ↓
+        HTTP Parser
+        ↓
+        Create HttpServletRequest/Response
+        ↓
+        Filter Chain
+        ↓
+        DispatcherServlet
+        ↓
+        HandlerMapping
+        ↓
+        Interceptors (preHandle)
+        ↓
+        HandlerAdapter
+        ↓
+        ArgumentResolvers
+        ↓
+        Controller
+        ↓
+        ReturnValueHandler
+        ↓
+        HttpMessageConverter
+        ↓
+        Write to HttpServletResponse
+        ↓
+        Interceptors (postHandle)
+        ↓
+        Tomcat flushes response
+        ↓
+        Client receives response_
 
+        
+        
+🔄 What really happens in Spring MVC
 
+        Client sends request → usually JSON
+        DispatcherServlet receives it
+        DispatcherServlet finds the controller method
+        Before entering your controller method:
+        JSON → converted to POJO
+        Done by HttpMessageConverter (e.g., Jackson)
+        Controller processes POJO and returns a Java object
+        Before sending response back to client:
+        POJO → converted to JSON
+        Again done by HttpMessageConverter
 
 
 
